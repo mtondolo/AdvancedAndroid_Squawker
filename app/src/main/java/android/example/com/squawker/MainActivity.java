@@ -103,11 +103,10 @@ public class MainActivity extends AppCompatActivity implements
                             return;
                         }
 
-                        // Get new Instance ID token
-                        // Log and toast
+                        // Get new Instance ID token and log
+                        // Log
                         String msg = getString(R.string.message_token_format, task.getResult().getToken());
                         Log.d(LOG_TAG, msg);
-                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
                     }
                 });
     }
