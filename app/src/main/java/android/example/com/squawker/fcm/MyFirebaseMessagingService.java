@@ -1,18 +1,18 @@
 /*
-* Copyright (C) 2017 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*  	http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package android.example.com.squawker.fcm;
 
 import android.app.NotificationManager;
@@ -36,11 +36,9 @@ import com.google.firebase.messaging.RemoteMessage;
 import java.util.Map;
 
 /**
- * Listens for squawk FCM messages both in the background and the foreground and responds
- * appropriately
- * depending on type of message
+ * Listens for changes in the InstanceID
  */
-public class SquawkFirebaseMessageService extends FirebaseMessagingService {
+public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private static final String JSON_KEY_AUTHOR = SquawkContract.COLUMN_AUTHOR;
     private static final String JSON_KEY_AUTHOR_KEY = SquawkContract.COLUMN_AUTHOR_KEY;
@@ -48,7 +46,7 @@ public class SquawkFirebaseMessageService extends FirebaseMessagingService {
     private static final String JSON_KEY_DATE = SquawkContract.COLUMN_DATE;
 
     private static final int NOTIFICATION_MAX_CHARACTERS = 30;
-    private static String LOG_TAG = SquawkFirebaseMessageService.class.getSimpleName();
+    private static final String TAG = "MyFirebaseMsgService";
 
     /**
      * Called when message is received.
@@ -74,20 +72,48 @@ public class SquawkFirebaseMessageService extends FirebaseMessagingService {
         // The Squawk server always sends just *data* messages, meaning that onMessageReceived when
         // the app is both in the foreground AND the background
 
-        Log.d(LOG_TAG, "From: " + remoteMessage.getFrom());
+        Log.d(TAG, "From: " + remoteMessage.getFrom());
 
         // Check if message contains a data payload.
 
         Map<String, String> data = remoteMessage.getData();
 
         if (data.size() > 0) {
-            Log.d(LOG_TAG, "Message data payload: " + data);
+            Log.d(TAG, "Message data payload: " + data);
 
             // Send a notification that you got a new message
             sendNotification(data);
             insertSquawk(data);
 
         }
+    }
+
+    // [START on_new_token]
+
+    /**
+     * Called if InstanceID token is updated. This may occur if the security of
+     * the previous token had been compromised. Note that this is called when the InstanceID token
+     * is initially generated so this is where you would retrieve the token.
+     */
+    @Override
+    public void onNewToken(String token) {
+        Log.d(TAG, "Refreshed token: " + token);
+
+        // If you want to send messages to this application instance or
+        // manage this apps subscriptions on the server side, send the
+        // Instance ID token to your app server.
+        sendRegistrationToServer(token);
+    }
+
+    /**
+     * Persist token to third-party servers.
+     * <p>
+     * Modify this method to associate the user's FCM InstanceID token with any server-side account
+     * maintained by your application.
+     *
+     * @param token The new token.
+     */
+    private void sendRegistrationToServer(String token) {
     }
 
     /**
@@ -115,7 +141,6 @@ public class SquawkFirebaseMessageService extends FirebaseMessagingService {
         insertSquawkTask.execute();
     }
 
-
     /**
      * Create and show a simple notification containing the received FCM message
      *
@@ -137,8 +162,9 @@ public class SquawkFirebaseMessageService extends FirebaseMessagingService {
             message = message.substring(0, NOTIFICATION_MAX_CHARACTERS) + "\u2026";
         }
 
+        String channelId = getString(R.string.default_notification_channel_id);
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.drawable.ic_duck)
                 .setContentTitle(String.format(getString(R.string.notification_message), author))
                 .setContentText(message)
@@ -151,4 +177,5 @@ public class SquawkFirebaseMessageService extends FirebaseMessagingService {
 
         notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
+
 }
